@@ -100,19 +100,17 @@ fn parse_stream_data(data: &str) -> SseAction<unified::StreamEvent> {
     }
 
     // Text content delta.
-    if let Some(text) = &choice.delta.content {
-        if !text.is_empty() {
-            return SseAction::Yield(Ok(unified::StreamEvent::ContentDelta(text.clone())));
-        }
+    if let Some(text) = &choice.delta.content
+        && !text.is_empty()
+    {
+        return SseAction::Yield(Ok(unified::StreamEvent::ContentDelta(text.clone())));
     }
 
     // Reasoning content delta.
-    if let Some(reasoning) = &choice.delta.reasoning_content {
-        if !reasoning.is_empty() {
-            return SseAction::Yield(Ok(unified::StreamEvent::ReasoningDelta(
-                reasoning.clone(),
-            )));
-        }
+    if let Some(reasoning) = &choice.delta.reasoning_content
+        && !reasoning.is_empty()
+    {
+        return SseAction::Yield(Ok(unified::StreamEvent::ReasoningDelta(reasoning.clone())));
     }
 
     // Tool-call deltas.
@@ -126,13 +124,13 @@ fn parse_stream_data(data: &str) -> SseAction<unified::StreamEvent> {
                         name: name.clone(),
                     }));
                 }
-                if let Some(args) = &func.arguments {
-                    if !args.is_empty() {
-                        return SseAction::Yield(Ok(unified::StreamEvent::ToolCallDelta {
-                            index: tc.index,
-                            arguments_delta: args.clone(),
-                        }));
-                    }
+                if let Some(args) = &func.arguments
+                    && !args.is_empty()
+                {
+                    return SseAction::Yield(Ok(unified::StreamEvent::ToolCallDelta {
+                        index: tc.index,
+                        arguments_delta: args.clone(),
+                    }));
                 }
             }
         }
@@ -266,10 +264,10 @@ fn role_str(role: &unified::Role) -> String {
 
 fn convert_content(parts: &[unified::ContentPart]) -> types::Content {
     // Single text → simple string (more compact).
-    if parts.len() == 1 {
-        if let unified::ContentPart::Text(t) = &parts[0] {
-            return types::Content::Text(t.clone());
-        }
+    if parts.len() == 1
+        && let unified::ContentPart::Text(t) = &parts[0]
+    {
+        return types::Content::Text(t.clone());
     }
 
     let openai_parts: Vec<types::ContentPart> = parts
@@ -300,15 +298,15 @@ fn convert_response(resp: types::Response) -> unified::ChatResponse {
     let (content, stop_reason) = match choice {
         Some(c) => {
             let mut parts = Vec::new();
-            if let Some(reasoning) = c.message.reasoning_content {
-                if !reasoning.is_empty() {
-                    parts.push(unified::ContentPart::Reasoning(reasoning));
-                }
+            if let Some(reasoning) = c.message.reasoning_content
+                && !reasoning.is_empty()
+            {
+                parts.push(unified::ContentPart::Reasoning(reasoning));
             }
-            if let Some(text) = c.message.content {
-                if !text.is_empty() {
-                    parts.push(unified::ContentPart::Text(text));
-                }
+            if let Some(text) = c.message.content
+                && !text.is_empty()
+            {
+                parts.push(unified::ContentPart::Text(text));
             }
             if let Some(tool_calls) = c.message.tool_calls {
                 for tc in tool_calls {

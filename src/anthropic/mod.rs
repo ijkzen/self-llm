@@ -122,9 +122,7 @@ fn parse_stream_data(data: &str) -> SseAction<unified::StreamEvent> {
             };
             SseAction::Yield(Ok(unified::StreamEvent::Done(stop)))
         }
-        types::StreamEvent::Error { error } => {
-            SseAction::Yield(Err(Error::Stream(error.message)))
-        }
+        types::StreamEvent::Error { error } => SseAction::Yield(Err(Error::Stream(error.message))),
         types::StreamEvent::MessageStop
         | types::StreamEvent::ContentBlockStop { .. }
         | types::StreamEvent::Ping => SseAction::Skip,
@@ -195,14 +193,12 @@ fn convert_content(parts: &[unified::ContentPart]) -> Vec<types::ContentBlock> {
         .iter()
         .map(|p| match p {
             unified::ContentPart::Text(t) => types::ContentBlock::Text { text: t.clone() },
-            unified::ContentPart::Reasoning(_) => {
-                types::ContentBlock::Text { text: String::new() }
-            }
+            unified::ContentPart::Reasoning(_) => types::ContentBlock::Text {
+                text: String::new(),
+            },
             unified::ContentPart::Image(src) => {
                 let source = match src {
-                    unified::ImageSource::Url(url) => {
-                        types::ImageSource::Url { url: url.clone() }
-                    }
+                    unified::ImageSource::Url(url) => types::ImageSource::Url { url: url.clone() },
                     unified::ImageSource::Base64 { media_type, data } => {
                         types::ImageSource::Base64 {
                             media_type: media_type.clone(),
