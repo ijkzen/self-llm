@@ -141,6 +141,11 @@ pub(crate) enum Delta {
     ThinkingDelta { thinking: String },
     #[serde(rename = "input_json_delta")]
     InputJsonDelta { partial_json: String },
+    #[serde(rename = "signature_delta")]
+    SignatureDelta {
+        #[allow(dead_code)]
+        signature: String,
+    },
 }
 
 #[derive(Deserialize)]

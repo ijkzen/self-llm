@@ -98,6 +98,7 @@ fn parse_stream_data(data: &str) -> SseAction<unified::StreamEvent> {
                     arguments_delta: partial_json,
                 }))
             }
+            types::Delta::SignatureDelta { .. } => SseAction::Skip,
         },
         types::StreamEvent::ContentBlockStart {
             index,
@@ -271,5 +272,20 @@ fn convert_response(resp: types::Response) -> unified::ChatResponse {
             output_tokens: resp.usage.output_tokens,
         }),
         stop_reason,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_stream_data;
+    use crate::sse::SseAction;
+
+    #[test]
+    fn signature_delta_is_ignored() {
+        let data = r#"{"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"abc123"}}"#;
+
+        let action = parse_stream_data(data);
+
+        assert!(matches!(action, SseAction::Skip));
     }
 }
