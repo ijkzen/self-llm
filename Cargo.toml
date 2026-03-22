@@ -2,6 +2,12 @@
 name = "self-llm"
 version = "0.1.1"
 edition = "2024"
+description = "Unified chat API for multiple LLM providers"
+license = "MIT"
+readme = "README.en.md"
+repository = "https://github.com/ijkzen/self-llm"
+homepage = "https://github.com/ijkzen/self-llm"
+documentation = "https://docs.rs/self-llm"
 
 [dependencies]
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
