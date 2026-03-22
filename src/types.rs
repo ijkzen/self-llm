@@ -114,6 +114,8 @@ pub struct ChatRequest {
     pub temperature: Option<f32>,
     pub top_p: Option<f32>,
     pub tools: Option<Vec<Tool>>,
+    /// Budget tokens for extended thinking (Anthropic).
+    pub budget_tokens: Option<u32>,
 }
 
 impl ChatRequest {
@@ -125,6 +127,7 @@ impl ChatRequest {
             temperature: None,
             top_p: None,
             tools: None,
+            budget_tokens: None,
         }
     }
 
@@ -145,6 +148,11 @@ impl ChatRequest {
 
     pub fn tools(mut self, tools: Vec<Tool>) -> Self {
         self.tools = Some(tools);
+        self
+    }
+
+    pub fn budget_tokens(mut self, n: u32) -> Self {
+        self.budget_tokens = Some(n);
         self
     }
 }

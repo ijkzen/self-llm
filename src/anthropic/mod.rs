@@ -89,6 +89,9 @@ fn parse_stream_data(data: &str) -> SseAction<unified::StreamEvent> {
             types::Delta::TextDelta { text } => {
                 SseAction::Yield(Ok(unified::StreamEvent::ContentDelta(text)))
             }
+            types::Delta::ThinkingDelta { thinking } => {
+                SseAction::Yield(Ok(unified::StreamEvent::ReasoningDelta(thinking)))
+            }
             types::Delta::InputJsonDelta { partial_json } => {
                 SseAction::Yield(Ok(unified::StreamEvent::ToolCallDelta {
                     index,
@@ -185,6 +188,10 @@ fn convert_request(request: unified::ChatRequest, stream: bool) -> types::Reques
         top_p: request.top_p,
         tools,
         stream,
+        thinking: request.budget_tokens.map(|budget| types::ThinkingConfig {
+            thinking_type: "enabled".to_string(),
+            budget_tokens: budget,
+        }),
     }
 }
 
@@ -232,6 +239,9 @@ fn convert_response(resp: types::Response) -> unified::ChatResponse {
         .into_iter()
         .filter_map(|block| match block {
             types::ContentBlock::Text { text } => Some(unified::ContentPart::Text(text)),
+            types::ContentBlock::Thinking { thinking } => {
+                Some(unified::ContentPart::Reasoning(thinking))
+            }
             types::ContentBlock::ToolUse { id, name, input } => {
                 Some(unified::ContentPart::ToolUse(unified::ToolUse {
                     id,

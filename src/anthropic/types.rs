@@ -16,6 +16,15 @@ pub(crate) struct Request {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tools: Option<Vec<Tool>>,
     pub stream: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub thinking: Option<ThinkingConfig>,
+}
+
+#[derive(Serialize)]
+pub(crate) struct ThinkingConfig {
+    #[serde(rename = "type")]
+    pub thinking_type: String,
+    pub budget_tokens: u32,
 }
 
 #[derive(Serialize)]
@@ -29,6 +38,8 @@ pub(crate) struct Message {
 pub(crate) enum ContentBlock {
     #[serde(rename = "text")]
     Text { text: String },
+    #[serde(rename = "thinking")]
+    Thinking { thinking: String },
     #[serde(rename = "image")]
     Image { source: ImageSource },
     #[serde(rename = "tool_use")]
@@ -122,9 +133,12 @@ pub(crate) struct StreamMessage {
 
 #[derive(Deserialize)]
 #[serde(tag = "type")]
+#[allow(clippy::enum_variant_names)]
 pub(crate) enum Delta {
     #[serde(rename = "text_delta")]
     TextDelta { text: String },
+    #[serde(rename = "thinking_delta")]
+    ThinkingDelta { thinking: String },
     #[serde(rename = "input_json_delta")]
     InputJsonDelta { partial_json: String },
 }
