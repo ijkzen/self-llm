@@ -37,8 +37,12 @@ jobs:
             exit 1
           fi
 
-      - name: Run tests
-        run: cargo test --locked
+      - name: Run non-integration tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --lib
+          cargo test --locked --doc
 
       - name: Publish to crates.io
         env:
