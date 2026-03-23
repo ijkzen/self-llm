@@ -12,5 +12,5 @@ pub use config::{LlmConfig, LlmProviderConfig, ProviderType};
 pub use error::Error;
 pub use types::{
     ChatRequest, ChatResponse, ContentPart, ImageSource, Message, Role, StopReason, StreamEvent,
-    Tool, ToolResult, ToolUse, Usage,
+    Tool, ToolChoice, ToolResult, ToolUse, Usage,
 };

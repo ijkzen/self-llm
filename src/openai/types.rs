@@ -14,11 +14,39 @@ pub(crate) struct Request {
     pub top_p: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tools: Option<Vec<Tool>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tool_choice: Option<ToolChoiceValue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parallel_tool_calls: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stop: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
     pub stream: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stream_options: Option<StreamOptions>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub store: Option<bool>,
+}
+
+/// OpenAI tool_choice can be a string ("auto", "none", "required") or an object.
+#[derive(Serialize)]
+#[serde(untagged)]
+pub(crate) enum ToolChoiceValue {
+    String(String),
+    Object(ToolChoiceObject),
+}
+
+#[derive(Serialize)]
+pub(crate) struct ToolChoiceObject {
+    #[serde(rename = "type")]
+    pub choice_type: String,
+    pub function: ToolChoiceFunction,
+}
+
+#[derive(Serialize)]
+pub(crate) struct ToolChoiceFunction {
+    pub name: String,
 }
 
 #[derive(Serialize)]

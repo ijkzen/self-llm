@@ -241,6 +241,18 @@ fn convert_request(request: unified::ChatRequest, stream: bool) -> types::Reques
             .collect()
     });
 
+    let tool_choice = request.tool_choice.map(|tc| match tc {
+        unified::ToolChoice::Auto => types::ToolChoiceValue::String("auto".to_string()),
+        unified::ToolChoice::None => types::ToolChoiceValue::String("none".to_string()),
+        unified::ToolChoice::Required => types::ToolChoiceValue::String("required".to_string()),
+        unified::ToolChoice::Specific(name) => {
+            types::ToolChoiceValue::Object(types::ToolChoiceObject {
+                choice_type: "function".to_string(),
+                function: types::ToolChoiceFunction { name },
+            })
+        }
+    });
+
     types::Request {
         model: request.model,
         messages,
@@ -248,6 +260,10 @@ fn convert_request(request: unified::ChatRequest, stream: bool) -> types::Reques
         temperature: request.temperature,
         top_p: request.top_p,
         tools,
+        tool_choice,
+        parallel_tool_calls: request.parallel_tool_calls,
+        stop: request.stop_sequences,
+        user: request.user,
         stream,
         stream_options: if stream {
             Some(types::StreamOptions {

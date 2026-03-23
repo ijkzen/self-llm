@@ -96,6 +96,19 @@ impl Message {
     }
 }
 
+/// Strategy for tool selection.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ToolChoice {
+    /// Let the model decide whether to call tools.
+    Auto,
+    /// Never call tools.
+    None,
+    /// Force the model to call at least one tool (OpenAI: "required", Anthropic: "any").
+    Required,
+    /// Force the model to call a specific tool by name.
+    Specific(String),
+}
+
 /// A tool definition that the model can call.
 #[derive(Debug, Clone)]
 pub struct Tool {
@@ -114,6 +127,19 @@ pub struct ChatRequest {
     pub temperature: Option<f32>,
     pub top_p: Option<f32>,
     pub tools: Option<Vec<Tool>>,
+    /// Strategy for tool selection.
+    pub tool_choice: Option<ToolChoice>,
+    /// Whether to allow parallel tool calls.
+    /// OpenAI: `parallel_tool_calls`; Anthropic: `tool_choice.disable_parallel_tool_use`.
+    pub parallel_tool_calls: Option<bool>,
+    /// Custom stop sequences.
+    /// OpenAI: `stop`; Anthropic: `stop_sequences`.
+    pub stop_sequences: Option<Vec<String>>,
+    /// Top-k sampling parameter (Anthropic only; ignored for OpenAI).
+    pub top_k: Option<u32>,
+    /// End-user identifier for abuse detection.
+    /// OpenAI: `user`; Anthropic: `metadata.user_id`.
+    pub user: Option<String>,
     /// Budget tokens for extended thinking (Anthropic).
     pub budget_tokens: Option<u32>,
     /// Enable prompt caching.
@@ -130,6 +156,11 @@ impl ChatRequest {
             temperature: None,
             top_p: None,
             tools: None,
+            tool_choice: None,
+            parallel_tool_calls: None,
+            stop_sequences: None,
+            top_k: None,
+            user: None,
             budget_tokens: None,
             prompt_cache: None,
         }
@@ -152,6 +183,31 @@ impl ChatRequest {
 
     pub fn tools(mut self, tools: Vec<Tool>) -> Self {
         self.tools = Some(tools);
+        self
+    }
+
+    pub fn tool_choice(mut self, choice: ToolChoice) -> Self {
+        self.tool_choice = Some(choice);
+        self
+    }
+
+    pub fn parallel_tool_calls(mut self, enabled: bool) -> Self {
+        self.parallel_tool_calls = Some(enabled);
+        self
+    }
+
+    pub fn stop_sequences(mut self, sequences: Vec<String>) -> Self {
+        self.stop_sequences = Some(sequences);
+        self
+    }
+
+    pub fn top_k(mut self, k: u32) -> Self {
+        self.top_k = Some(k);
+        self
+    }
+
+    pub fn user(mut self, user: impl Into<String>) -> Self {
+        self.user = Some(user.into());
         self
     }
 

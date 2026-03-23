@@ -194,6 +194,31 @@ fn convert_request(request: unified::ChatRequest, stream: bool) -> types::Reques
             .collect()
     });
 
+    // Build tool_choice, incorporating parallel_tool_calls control.
+    let disable_parallel = request.parallel_tool_calls.map(|enabled| !enabled);
+
+    let tool_choice = match (&request.tool_choice, disable_parallel) {
+        (Some(tc), dp) => {
+            let (choice_type, name) = match tc {
+                unified::ToolChoice::Auto => ("auto".to_string(), None),
+                unified::ToolChoice::None => ("none".to_string(), None),
+                unified::ToolChoice::Required => ("any".to_string(), None),
+                unified::ToolChoice::Specific(n) => ("tool".to_string(), Some(n.clone())),
+            };
+            Some(types::AnthropicToolChoice {
+                choice_type,
+                name,
+                disable_parallel_tool_use: dp,
+            })
+        }
+        (None, Some(dp)) => Some(types::AnthropicToolChoice {
+            choice_type: "auto".to_string(),
+            name: None,
+            disable_parallel_tool_use: Some(dp),
+        }),
+        (None, None) => None,
+    };
+
     types::Request {
         model: request.model,
         messages,
@@ -201,7 +226,11 @@ fn convert_request(request: unified::ChatRequest, stream: bool) -> types::Reques
         system,
         temperature: request.temperature,
         top_p: request.top_p,
+        top_k: request.top_k,
         tools,
+        tool_choice,
+        stop_sequences: request.stop_sequences,
+        metadata: request.user.map(|id| types::Metadata { user_id: id }),
         stream,
         thinking: request.budget_tokens.map(|budget| types::ThinkingConfig {
             thinking_type: "enabled".to_string(),
