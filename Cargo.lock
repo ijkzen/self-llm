@@ -928,7 +928,7 @@ dependencies = [
 
 [[package]]
 name = "self-llm"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "bytes",
  "dotenvy",
