@@ -116,6 +116,9 @@ pub struct ChatRequest {
     pub tools: Option<Vec<Tool>>,
     /// Budget tokens for extended thinking (Anthropic).
     pub budget_tokens: Option<u32>,
+    /// Enable prompt caching.
+    /// OpenAI: sets `store: true`; Anthropic: sets top-level `cache_control`.
+    pub prompt_cache: Option<bool>,
 }
 
 impl ChatRequest {
@@ -128,6 +131,7 @@ impl ChatRequest {
             top_p: None,
             tools: None,
             budget_tokens: None,
+            prompt_cache: None,
         }
     }
 
@@ -153,6 +157,11 @@ impl ChatRequest {
 
     pub fn budget_tokens(mut self, n: u32) -> Self {
         self.budget_tokens = Some(n);
+        self
+    }
+
+    pub fn prompt_cache(mut self, enabled: bool) -> Self {
+        self.prompt_cache = Some(enabled);
         self
     }
 }
@@ -201,6 +210,10 @@ impl ChatResponse {
 pub struct Usage {
     pub input_tokens: u32,
     pub output_tokens: u32,
+    /// Tokens read from cache (prompt cache hit).
+    pub cache_read_input_tokens: Option<u32>,
+    /// Tokens written to cache (prompt cache miss / creation).
+    pub cache_creation_input_tokens: Option<u32>,
 }
 
 /// Reason why the model stopped generating.

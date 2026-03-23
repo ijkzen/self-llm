@@ -18,6 +18,14 @@ pub(crate) struct Request {
     pub stream: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub thinking: Option<ThinkingConfig>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cache_control: Option<CacheControl>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub(crate) struct CacheControl {
+    #[serde(rename = "type")]
+    pub control_type: String,
 }
 
 #[derive(Serialize)]
@@ -87,6 +95,10 @@ pub(crate) struct Response {
 pub(crate) struct Usage {
     pub input_tokens: u32,
     pub output_tokens: u32,
+    #[serde(default)]
+    pub cache_read_input_tokens: Option<u32>,
+    #[serde(default)]
+    pub cache_creation_input_tokens: Option<u32>,
 }
 
 // ---- Streaming response types ----
@@ -111,7 +123,6 @@ pub(crate) enum StreamEvent {
     #[serde(rename = "message_delta")]
     MessageDelta {
         delta: MessageDeltaBody,
-        #[allow(dead_code)]
         usage: Option<Usage>,
     },
     #[serde(rename = "message_stop")]

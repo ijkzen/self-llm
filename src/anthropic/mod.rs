@@ -114,9 +114,11 @@ fn parse_stream_data(data: &str) -> SseAction<unified::StreamEvent> {
             SseAction::Yield(Ok(unified::StreamEvent::Usage(unified::Usage {
                 input_tokens: message.usage.input_tokens,
                 output_tokens: message.usage.output_tokens,
+                cache_read_input_tokens: message.usage.cache_read_input_tokens,
+                cache_creation_input_tokens: message.usage.cache_creation_input_tokens,
             })))
         }
-        types::StreamEvent::MessageDelta { delta, .. } => {
+        types::StreamEvent::MessageDelta { delta, usage } => {
             let stop = match delta.stop_reason.as_deref() {
                 Some("end_turn") => unified::StopReason::EndTurn,
                 Some("max_tokens") => unified::StopReason::MaxTokens,
@@ -124,6 +126,18 @@ fn parse_stream_data(data: &str) -> SseAction<unified::StreamEvent> {
                 Some(other) => unified::StopReason::Unknown(other.to_string()),
                 None => unified::StopReason::Unknown("none".to_string()),
             };
+            // Emit output_tokens from message_delta usage before Done.
+            if let Some(u) = usage {
+                return SseAction::YieldMany(vec![
+                    Ok(unified::StreamEvent::Usage(unified::Usage {
+                        input_tokens: 0,
+                        output_tokens: u.output_tokens,
+                        cache_read_input_tokens: None,
+                        cache_creation_input_tokens: None,
+                    })),
+                    Ok(unified::StreamEvent::Done(stop)),
+                ]);
+            }
             SseAction::Yield(Ok(unified::StreamEvent::Done(stop)))
         }
         types::StreamEvent::Error { error } => SseAction::Yield(Err(Error::Stream(error.message))),
@@ -193,6 +207,13 @@ fn convert_request(request: unified::ChatRequest, stream: bool) -> types::Reques
             thinking_type: "enabled".to_string(),
             budget_tokens: budget,
         }),
+        cache_control: if request.prompt_cache == Some(true) {
+            Some(types::CacheControl {
+                control_type: "ephemeral".to_string(),
+            })
+        } else {
+            None
+        },
     }
 }
 
@@ -270,6 +291,8 @@ fn convert_response(resp: types::Response) -> unified::ChatResponse {
         usage: Some(unified::Usage {
             input_tokens: resp.usage.input_tokens,
             output_tokens: resp.usage.output_tokens,
+            cache_read_input_tokens: resp.usage.cache_read_input_tokens,
+            cache_creation_input_tokens: resp.usage.cache_creation_input_tokens,
         }),
         stop_reason,
     }

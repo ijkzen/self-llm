@@ -81,6 +81,11 @@ fn parse_stream_data(data: &str) -> SseAction<unified::StreamEvent> {
         return SseAction::Yield(Ok(unified::StreamEvent::Usage(unified::Usage {
             input_tokens: usage.prompt_tokens,
             output_tokens: usage.completion_tokens,
+            cache_read_input_tokens: usage
+                .prompt_tokens_details
+                .as_ref()
+                .and_then(|d| d.cached_tokens),
+            cache_creation_input_tokens: None,
         })));
     }
 
@@ -251,6 +256,7 @@ fn convert_request(request: unified::ChatRequest, stream: bool) -> types::Reques
         } else {
             None
         },
+        store: request.prompt_cache,
     }
 }
 
@@ -341,6 +347,8 @@ fn convert_response(resp: types::Response) -> unified::ChatResponse {
         usage: resp.usage.map(|u| unified::Usage {
             input_tokens: u.prompt_tokens,
             output_tokens: u.completion_tokens,
+            cache_read_input_tokens: u.prompt_tokens_details.and_then(|d| d.cached_tokens),
+            cache_creation_input_tokens: None,
         }),
         stop_reason,
     }

@@ -7,6 +7,7 @@ use crate::error::Error;
 
 pub(crate) enum SseAction<T> {
     Yield(Result<T, Error>),
+    YieldMany(Vec<Result<T, Error>>),
     Done,
     Skip,
 }
@@ -32,13 +33,20 @@ where
                 as Pin<Box<dyn Stream<Item = Result<Bytes, reqwest::Error>> + Send>>,
             String::new(),
             false,
+            std::collections::VecDeque::<Result<T, Error>>::new(),
         ),
-        move |(mut stream, mut buffer, done)| {
+        move |(mut stream, mut buffer, done, mut pending)| {
             let parse_data = Arc::clone(&parse_data);
             async move {
                 if done {
                     return None;
                 }
+
+                // Drain any pending items from a previous YieldMany.
+                if let Some(item) = pending.pop_front() {
+                    return Some((item, (stream, buffer, false, pending)));
+                }
+
                 loop {
                     // Try to consume complete SSE event blocks from the buffer.
                     while let Some(pos) = buffer.find("\n\n") {
@@ -48,7 +56,14 @@ where
                         if let Some(data) = extract_sse_data(&block) {
                             match parse_data(&data) {
                                 SseAction::Yield(item) => {
-                                    return Some((item, (stream, buffer, false)));
+                                    return Some((item, (stream, buffer, false, pending)));
+                                }
+                                SseAction::YieldMany(items) => {
+                                    let mut items: std::collections::VecDeque<_> = items.into();
+                                    if let Some(first) = items.pop_front() {
+                                        pending = items;
+                                        return Some((first, (stream, buffer, false, pending)));
+                                    }
                                 }
                                 SseAction::Done => return None,
                                 SseAction::Skip => {}
@@ -63,7 +78,7 @@ where
                             buffer.push_str(&text);
                         }
                         Some(Err(e)) => {
-                            return Some((Err(Error::Http(e)), (stream, buffer, true)));
+                            return Some((Err(Error::Http(e)), (stream, buffer, true, pending)));
                         }
                         None => return None,
                     }
