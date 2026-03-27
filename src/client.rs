@@ -9,6 +9,13 @@ use crate::{
     types::{ChatRequest, ChatResponse, StreamEvent},
 };
 
+fn build_http_client() -> reqwest::Client {
+    reqwest::Client::builder()
+        .use_rustls_tls()
+        .build()
+        .expect("failed to build HTTP client")
+}
+
 /// Unified LLM client that works with both OpenAI and Anthropic APIs.
 pub struct Client {
     provider: Provider,
@@ -43,7 +50,7 @@ impl Client {
                 base_url: base_url.into(),
                 custom_headers: HashMap::new(),
             },
-            http: reqwest::Client::new(),
+            http: build_http_client(),
         }
     }
 
@@ -64,12 +71,13 @@ impl Client {
                 api_version: "2023-06-01".to_string(),
                 custom_headers: HashMap::new(),
             },
-            http: reqwest::Client::new(),
+            http: build_http_client(),
         }
     }
 
     /// Create a client from a [`LlmProviderConfig`].
     pub fn from_provider(config: &LlmProviderConfig) -> Self {
+        let http = build_http_client();
         match config.provider_type {
             ProviderType::OpenAi => Self {
                 provider: Provider::OpenAi {
@@ -77,7 +85,7 @@ impl Client {
                     base_url: config.base_url.clone(),
                     custom_headers: config.custom_header.clone(),
                 },
-                http: reqwest::Client::new(),
+                http,
             },
             ProviderType::Anthropic => Self {
                 provider: Provider::Anthropic {
@@ -86,7 +94,7 @@ impl Client {
                     api_version: "2023-06-01".to_string(),
                     custom_headers: config.custom_header.clone(),
                 },
-                http: reqwest::Client::new(),
+                http,
             },
         }
     }
